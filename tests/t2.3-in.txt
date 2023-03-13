@@ -1,0 +1,5 @@
+Y
+in.txt
+Q
+Y
+out.txt

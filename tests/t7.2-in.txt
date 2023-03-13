@@ -1,0 +1,15 @@
+N
+I
+O=C=O
+I
+NC(C)C(=O)O
+D
+0
+2
+OO
+CC
+OO
+O=C=O
+NC(C)C(=O)O
+Q
+N
