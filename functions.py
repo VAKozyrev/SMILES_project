@@ -109,6 +109,8 @@ def print_help_message():
                     'M: Count the number of times each atomic element occurs in the strings in the list and obtain the molecular formula (number of atoms of each element, e.g., C8NO2). The output of the command should appear in the terminal and be in lexicographic order.',
                     'D: compare a given pair of molecules from their SMILES representation (calculate their dissimilarity, i.e., sum of squared differences between the number of occurrences of the sub-strings in two SMILES).',
                     "I: input a new SMILES string to be added to the current list, if valid (if not, the application reports it found a problem and waits for the user's to input a new command).",
+                    'L: list all loaded SMILES',
+                    'LMW: list molecular weights of all loaded molecules'
                     'H: help - list all commands.',
                     'Q: quit - quit the application.']
     for i in help_message:
