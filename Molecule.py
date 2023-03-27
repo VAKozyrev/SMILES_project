@@ -2,8 +2,8 @@ from Smiles import Smiles
 
 def make_atom_counter_dict():
     atom_counter_dict = {}
-    elements = ['carbon', 'hydrogen', 'lithium', 'boron', 'nitrogen', 'oxygen', 'fluorine', 'sodium',
-                'silicon', 'phosphorus', 'sulfur', 'chlorine', 'arsenic', 'selenium', 'bromine', 'iodine']
+    elements = ['carbon', 'hydrogen', 'boron', 'bromine', 'chlorine', 'fluorine', 'iodine', 'nitrogen', 'oxygen',
+                'phosphorus', 'selenium', 'silicon', 'sulfur']
 
     for element in elements:
         atom_counter_dict[element] = 0

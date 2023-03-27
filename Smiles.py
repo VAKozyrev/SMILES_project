@@ -182,7 +182,7 @@ class Smiles:
                     'double_bond': 2,
                     'triple_bond': 3,
                     'quadruple_bond': 4,
-                    'chiral_double_bond': 2,
+                    'chiral_double_bond': 1,  #!!!!
                     'aromatic_bond': 1.5}
 
         branch_starts = {}

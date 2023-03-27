@@ -69,7 +69,15 @@ class Atom:
             raise StructureError('unknown_element')
 
     def get_valency(self):
-        self.valency = Atom.atoms_valencies[self.element]
+        if self.element == 'sulfur':
+            if self.number_of_bonds == 4:
+                self.valency = 4
+            elif self.number_of_bonds == 6:
+                self.valency = 6
+            else:
+                self.valency = 2
+        else:
+            self.valency = Atom.atoms_valencies[self.element]
 
     def get_mass(self):
         if self.explicit_mass != 0:
@@ -87,4 +95,5 @@ class Atom:
         self.bonds[atom_number] = bond_order
         self.number_of_bonds += bond_order
 
+        self.get_valency()
         self.get_hydrogens()
