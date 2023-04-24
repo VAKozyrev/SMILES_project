@@ -19,10 +19,11 @@ class Molecule:
 
     all = []
 
-    def __init__(self, smiles: Smiles):
-        self.smiles = smiles
-        self.structure = smiles.get_structure()
+    def __init__(self, smiles: str):
+        self.smiles = Smiles(smiles)
+        self.structure = self.smiles.get_structure()
         self.get_molecular_formula()
+        self.descriptors = {}
         if self not in Molecule.all:
             Molecule.all.append(self)
         else:

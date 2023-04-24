@@ -1,20 +1,28 @@
+import csv
+
 import constants as c
 
 from errors import StructureError
 from Smiles import Smiles
 from Molecule import Molecule
 
+def read_strings_from_file(file_name):
+    with open(file_name, 'r') as file:
+        strings = file.read().splitlines()
+    return strings
+
 def read_molecules_from_file(file_name):
+    """
+    :param file_name: str
+    read all strings from txt file and try
+    """
     try:
-        with open(file_name, 'r') as file:
-            strings = file.read().splitlines()
+        strings = read_strings_from_file(file_name)
         for string in strings:
             try:
-                smiles = Smiles(string)
-                molecule = Molecule(smiles)
+                molecule = Molecule(string)
             except StructureError as e:
                 print(f'SMILES invalid: {string}', e.message)
-
     except FileNotFoundError:
         print(c.FAILED_READING + file_name)
 
@@ -76,6 +84,7 @@ def count_substrings():
         res = f'{molecule.smiles}  contains'
         for substring in substrings_list:
             number = molecule.smiles.smiles.count(substring)
+            molecule.descriptors[substring] = number
             res += f' {substring} {number} times'
 
         print(res)
@@ -100,9 +109,13 @@ def dissimilarity():
     print('dissimilarity =  ', dissimilarity)
 
 def write_to_file(file_name):
-    with open(file_name, 'w') as file:
+    with open(file_name, 'w', newline='') as file:
+        writer = csv.writer(file)
+        header = ['SMILES'] + list(Molecule.all[0].descriptors.keys())
+        writer.writerow(header)
         for molecule in Molecule.all:
-            file.write(str(molecule.smiles) + '\n')
+            row = [str(molecule.smiles)] + list(molecule.descriptors.values())
+            writer.writerow(row)
 
 def print_help_message():
     help_message = ['C: count the number of times each sub-string from an external list (given file) occurs in the SMILES strings of the list.',
