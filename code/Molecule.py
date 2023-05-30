@@ -1,64 +1,51 @@
 from Smiles import Smiles
 
-def make_atom_counter_dict():
-    atom_counter_dict = {}
-    elements = ['carbon', 'hydrogen', 'boron', 'bromine', 'chlorine', 'fluorine', 'iodine', 'nitrogen', 'oxygen',
-                'phosphorus', 'selenium', 'silicon', 'sulfur']
-
-    for element in elements:
-        atom_counter_dict[element] = 0
-
-    return atom_counter_dict
-
+def make_atom_counter():
+    return {'C': 0, 'H': 0, 'B': 0, 'Br': 0, 'Cl': 0, 'F': 0, 'I': 0, 'N': 0, 'O': 0, 'P': 0, 'S': 0}
 class Molecule:
-
-    element_symbols = {'hydrogen': 'H', 'lithium': 'Li', 'boron': 'B', 'carbon': 'C', 'nitrogen': 'N',
-                       'oxygen': 'O', 'fluorine': 'F', 'sodium': 'Na', 'silicon': 'Si', 'phosphorus': 'P',
-                       'sulfur': 'S', 'chlorine': 'Cl', 'arsenic': 'As', 'selenium': 'Se', 'bromine': 'Br',
-                       'iodine': 'I'}
 
     all = []
 
     def __init__(self, smiles: str):
         self.smiles = Smiles(smiles)
         self.structure = self.smiles.get_structure()
-        self.get_molecular_formula()
-        self.descriptors = {}
-        if self not in Molecule.all:
-            Molecule.all.append(self)
-        else:
-            print(f'{self.smiles} is already loaded.')
+        self.substrings = {}
+
+        self.molecular_formula = ''
+        self.molecular_weight = 0
 
     def __eq__(self, other_molecule):
-        if self.smiles == other_molecule.smiles:
+        if type(other_molecule) == Molecule and self.smiles == other_molecule.smiles:
             return True
+        return False
 
     def get_molecular_formula(self):
-        atom_counter_dict = make_atom_counter_dict()
 
-        molecular_formula = ""
+        atom_counter = make_atom_counter()
 
-        for atom_number in self.structure.atoms:
-            element = self.structure.atoms[atom_number].element
-            atom_counter_dict[element] += 1
-            atom_counter_dict['hydrogen'] += self.structure.atoms[atom_number].hydrogens
+        for atom in self.structure.get_atoms():
+            atom_counter[atom.element] += 1
+            atom_counter['H'] += atom.hydrogens
 
-        if isinstance(atom_counter_dict['hydrogen'], float):
-            if atom_counter_dict['hydrogen'].is_integer:
-                atom_counter_dict['hydrogen'] = int(atom_counter_dict['hydrogen'])
+        if isinstance(atom_counter['H'], float):
+            if atom_counter['H'].is_integer:
+                atom_counter['H'] = int(atom_counter['H'])
 
-        for element in atom_counter_dict:
-            if atom_counter_dict[element] > 0:
-                molecular_formula += self.element_symbols[element]
-                if atom_counter_dict[element] > 1:
-                    molecular_formula += str(atom_counter_dict[element])
-
-        self.molecular_formula = molecular_formula
+        for element in atom_counter:
+            if atom_counter[element] > 0:
+                self.molecular_formula += element
+                if atom_counter[element] > 1:
+                    self.molecular_formula += str(atom_counter[element])
 
     def get_molecular_weight(self):
 
-        molecular_weight = 0
         for atom in self.structure.get_atoms():
-            molecular_weight += atom.mass + atom.hydrogens
+            self.molecular_weight += atom.mass + atom.hydrogens
 
-        self.molecular_weight = round(molecular_weight, 2)
+    def get_atoms(self):
+        for atom in self.structure.get_atoms():
+            print(atom)
+
+    def get_bonds(self):
+        for bond in self.structure.get_bonds():
+            print(str(bond.number) + ':', bond)

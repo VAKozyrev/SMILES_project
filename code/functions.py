@@ -1,43 +1,86 @@
 import csv
+import sys
 
 import constants as c
 
-from errors import StructureError
+from errors import StructureError, InvalidSymbol
 from Smiles import Smiles
 from Molecule import Molecule
 
+def select_input_source():
+    print(c.INPUT_SOURCE)
+    input_source = input(c.PROMPT)
+    while input_source.upper() != c.FILE and input_source.upper() != c.TERMINAL:
+        print(c.INVALID_INPUT)
+        input_source = input(c.PROMPT)
+    return input_source.upper()
+
 def read_strings_from_file(file_name):
+    """
+    :param file_name: str
+    :return: strings: list of str
+    read all string from .txt file and return list of strings
+    """
     with open(file_name, 'r') as file:
         strings = file.read().splitlines()
     return strings
 
 def read_molecules_from_file(file_name):
-    """
-    :param file_name: str
-    read all strings from txt file and try
-    """
     try:
         strings = read_strings_from_file(file_name)
-        for string in strings:
+        for i, string in enumerate(strings):
             try:
                 molecule = Molecule(string)
+                if molecule not in Molecule.all:
+                    Molecule.all.append(molecule)
+                #else:
+                    #print(f'{molecule.smiles} is already loaded.')
             except StructureError as e:
-                print(f'SMILES invalid: {string}', e.message)
+                print(f'\rSMILES {string} invalid ' + e.message)
+            except InvalidSymbol as e:
+                print('\r'+e.message)
+            sys.stdout.write(f"\r{i} SMILES processed")
+            sys.stdout.flush()
+        print(f'\n{len(Molecule.all)} SMILES loaded')
     except FileNotFoundError:
-        print(c.FAILED_READING + file_name)
+        print(c.FAILED_READING + f' "{file_name}"')
 
 def list_smiles():
-    for molecule in Molecule.all:
-        print(molecule.smiles)
+    if Molecule.all:
+        for molecule in Molecule.all:
+            print(molecule.smiles)
+    else:
+        print(c.LIST_IS_EMPTY)
 
 def input_molecule():
-    string = input(c.INPUT_SMILES)
+    print(c.INPUT_SOURCE)
+    answer = input(c.PROMPT)
 
-    try:
-        smiles = Smiles(string)
-        molecule = Molecule(smiles)
-    except StructureError as e:
-        print(f'SMILES invalid: {string}', e.message)
+    while answer.upper() != c.TERMINAL and answer.upper() != c.FILE:
+        print(c.INVALID_ANSWER)
+        answer = input(c.PROMPT)
+
+    if answer.upper() == c.FILE:
+        print(c.INPUT_FILE_NAME)
+        file_name = input(c.PROMPT)
+        read_molecules_from_file(file_name)
+
+    else:
+        print(c.INPUT_SMILES)
+        string = input(c.PROMPT)
+        try:
+            molecule = Molecule(string)
+            if molecule not in Molecule.all:
+                Molecule.all.append(molecule)
+                print(f'SMILES {string} was loaded')
+                print(f'{len(Molecule.all)} SMILES loaded')
+            else:
+                print(f'{molecule.smiles} is already loaded.')
+        except StructureError as e:
+            print(f'SMILES {string} invalid ' + e.message)
+        except InvalidSymbol as e:
+            print(e.message)
+
 
 def list_molecular_formulas():
     for molecule in Molecule.all:
@@ -58,36 +101,37 @@ def list_molecular_weights():
 def count_substrings():
     substrings_list = []
 
-    answer = input(c.INPUT_SOURCE)
-    while answer.upper() != c.FILE and answer.upper() != c.TERMINAL:
-        print(c.INVALID_INPUT)
-        answer = input(c.INPUT_SOURCE)
+    input_source = select_input_source()
 
-    if answer.upper() == c.FILE:
+    if input_source == c.FILE:
+        print(c.INPUT_FILE_NAME)
         file_name = input(c.PROMPT)
         try:
-            with open('file_name', 'r') as file:
-                substrings_list = file.read().splitlines()
+            substrings_list = read_strings_from_file(file_name)
         except FileNotFoundError:
-            print(c.FAILED_READING + str(file_name))
+            print(c.FAILED_READING + ' ' + file_name)
 
-        if not substrings_list:
-            print(c.LIST_IS_EMPTY)
-
-    if answer.upper() == c.TERMINAL:
-        num_of_strings = int(input('enter number of substrings: '))
+    if input_source == c.TERMINAL:
+        print('Enter number of substrings:')
+        num_of_strings = int(input(c.PROMPT))
         for i in range(num_of_strings):
-            substring = input()
+            substring = input(c.PROMPT)
             substrings_list.append(substring)
-    print(substrings_list)
-    for molecule in Molecule.all:
-        res = f'{molecule.smiles}  contains'
-        for substring in substrings_list:
-            number = molecule.smiles.smiles.count(substring)
-            molecule.descriptors[substring] = number
-            res += f' {substring} {number} times'
 
-        print(res)
+    if not substrings_list:
+        print('Substrings list is empty')
+    else:
+        print('Specify output file .csv file name:')
+        out_file_name = input(c.PROMPT)
+        with open(out_file_name, 'w', newline='') as file:
+            writer = csv.writer(file)
+            header = ['SMILES'] + substrings_list
+            writer.writerow(header)
+            for molecule in Molecule.all:
+                for substring in substrings_list:
+                    molecule.substrings[substring] = molecule.smiles.smiles.count(substring)
+                row = [str(molecule.smiles)] + list(molecule.substrings.values())
+                writer.writerow(row)
 
 def count_dissimilarity(str1, str2, substrings_list):
     dissimilarity = 0
@@ -109,22 +153,18 @@ def dissimilarity():
     print('dissimilarity =  ', dissimilarity)
 
 def write_to_file(file_name):
-    with open(file_name, 'w', newline='') as file:
-        writer = csv.writer(file)
-        header = ['SMILES'] + list(Molecule.all[0].descriptors.keys())
-        writer.writerow(header)
+    with open(file_name, 'w') as file:
         for molecule in Molecule.all:
-            row = [str(molecule.smiles)] + list(molecule.descriptors.values())
-            writer.writerow(row)
+            file.write(str(molecule.smiles)+'\n')
 
 def print_help_message():
-    help_message = ['C: count the number of times each sub-string from an external list (given file) occurs in the SMILES strings of the list.',
-                    'M: Count the number of times each atomic element occurs in the strings in the list and obtain the molecular formula (number of atoms of each element, e.g., C8NO2). The output of the command should appear in the terminal and be in lexicographic order.',
-                    'D: compare a given pair of molecules from their SMILES representation (calculate their dissimilarity, i.e., sum of squared differences between the number of occurrences of the sub-strings in two SMILES).',
-                    "I: input a new SMILES string to be added to the current list, if valid (if not, the application reports it found a problem and waits for the user's to input a new command).",
+    help_message = ['>',
                     'L: list all loaded SMILES',
-                    'LMW: list molecular weights of all loaded molecules'
-                    'H: help - list all commands.',
-                    'Q: quit - quit the application.']
+                    'I: input a new SMILES strings',
+                    'C: count the number of times each sub-string from an external list occurs in the SMILES',
+                    'M: obtain the molecular formula',
+                    'D: compare a given pair of molecules from their SMILES (calculate their dissimilarity)',
+                    'MW: obtain molecular weights of all loaded molecules',
+                    'Q: quit the application']
     for i in help_message:
         print(i)
