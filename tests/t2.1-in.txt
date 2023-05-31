@@ -1,4 +1,0 @@
-Y
-in.txt
-Q
-N

@@ -1,7 +1,7 @@
-from Smiles import Smiles
+from code.Smiles import Smiles
 
 def make_atom_counter():
-    return {'C': 0, 'H': 0, 'B': 0, 'Br': 0, 'Cl': 0, 'F': 0, 'I': 0, 'N': 0, 'O': 0, 'P': 0, 'S': 0}
+    return {'C': 0, 'H': 0, 'As': 0, 'B': 0, 'Br': 0, 'Cl': 0, 'F': 0, 'I': 0, 'N': 0, 'O': 0, 'P': 0, 'S': 0, 'Se': 0, 'Si': 0, 'Te': 0}
 class Molecule:
 
     all = []
@@ -22,11 +22,12 @@ class Molecule:
     def get_molecular_formula(self):
 
         atom_counter = make_atom_counter()
+        charge = 0
 
         for atom in self.structure.get_atoms():
             atom_counter[atom.element] += 1
             atom_counter['H'] += atom.hydrogens
-
+            charge += atom.charge
         if isinstance(atom_counter['H'], float):
             if atom_counter['H'].is_integer:
                 atom_counter['H'] = int(atom_counter['H'])
@@ -36,6 +37,17 @@ class Molecule:
                 self.molecular_formula += element
                 if atom_counter[element] > 1:
                     self.molecular_formula += str(atom_counter[element])
+
+        if charge != 0:
+            if charge > 0:
+                self.molecular_formula += '+'
+                if charge > 1:
+                    self.molecular_formula += str(charge)
+            else:
+                self.molecular_formula += '-'
+                if abs(charge) > 1:
+                    self.molecular_formula += str(abs(charge))
+
 
     def get_molecular_weight(self):
 

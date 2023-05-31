@@ -1,7 +1,7 @@
-from Molecule import Molecule
+from code.Molecule import Molecule
 
-import constants as c
-import functions as f
+import code.constants as c
+import code.functions as f
 
 def main():
 

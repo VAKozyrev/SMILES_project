@@ -1,11 +1,11 @@
 import csv
 import sys
 
-import constants as c
+import code.constants as c
 
-from errors import StructureError, InvalidSymbol
-from Smiles import Smiles
-from Molecule import Molecule
+from code.errors import StructureError, InvalidSymbol
+from code.Smiles import Smiles
+from code.Molecule import Molecule
 
 def select_input_source():
     print(c.INPUT_SOURCE)
@@ -39,7 +39,7 @@ def read_molecules_from_file(file_name):
                 print(f'\rSMILES {string} invalid ' + e.message)
             except InvalidSymbol as e:
                 print('\r'+e.message)
-            sys.stdout.write(f"\r{i} SMILES processed")
+            sys.stdout.write(f"\r{i+1} SMILES processed")
             sys.stdout.flush()
         print(f'\n{len(Molecule.all)} SMILES loaded')
     except FileNotFoundError:

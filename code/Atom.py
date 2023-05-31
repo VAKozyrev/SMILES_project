@@ -1,4 +1,4 @@
-from errors import StructureError
+from code.errors import StructureError
 
 class Atom:
 
@@ -9,7 +9,7 @@ class Atom:
 
     atoms_valencies = {'C': [4], 'N': [3], 'O': [2], 'B': [3], 'H': [1], 'S': [2, 4, 6],
                        'P': [3, 5], 'Br': [1], 'I': [1], 'Cl': [1], 'F': [1],
-                       'Se': [2], 'Si': [4], 'Te': [2], 'As': [3]}
+                       'Se': [2, 4], 'Si': [4], 'Te': [2, 4], 'As': [3]}
 
     def __init__(self, symbol: str, atom_number: int, chiral_mark='', charge=0, explicit_hydrogens=-1, explicit_mass=0):
         self.bonds = {}  # Dictionary of bonded atoms {atom_number: bond_order}
@@ -58,20 +58,26 @@ class Atom:
         else:
             return Atom.molecular_weights[self.element]
 
-    def set_valency(self):
-        for i in Atom.atoms_valencies[self.element]:
-            if i >= self.number_of_bonds - self.charge:
-                self.valency = i
-        if self.valency == 0:
-            raise StructureError('wrong_valency', atom=self.element)
-
     def set_hydrogens(self):
         if self.explicit_hydrogens != -1:
-            self.hydrogens = int(self.explicit_hydrogens)
+            self.hydrogens = self.explicit_hydrogens
+            for i in Atom.atoms_valencies[self.element]:
+                if i == self.hydrogens + self.number_of_bonds - self.charge and self.element != 'B':
+                    self.valency = i
+                if i == self.hydrogens + self.number_of_bonds + self.charge and self.element == 'B':
+                    self.valency = i
+            if self.valency == 0:
+                raise StructureError('wrong_valency', atom=self.element)
         else:
-            self.hydrogens = int(self.valency) - int(self.number_of_bonds) + int(self.charge)
-        if self.hydrogens < 0:
-            raise StructureError('wrong_valency', atom=self.element)
+            for i in Atom.atoms_valencies[self.element]:
+                if i >= self.number_of_bonds - self.charge:
+                    self.valency = i
+                    break
+            if self.valency == 0:
+                raise StructureError('wrong_valency', atom=self.element)
+            self.hydrogens = self.valency - self.number_of_bonds + self.charge
+            if self.hydrogens < 0:
+                raise StructureError('wrong_valency', atom=self.element)
 
     def add_bond(self, atom_number, bond_order):
         self.bonds[atom_number] = bond_order
