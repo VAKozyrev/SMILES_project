@@ -1,8 +1,8 @@
-from Atom import Atom
-from Bond import Bond
-from Structure import Structure
+from code.Atom import Atom
+from code.Bond import Bond
+from code.Structure import Structure
 
-from errors import StructureError, InvalidSymbol
+from code.errors import StructureError, InvalidSymbol
 
 def make_components_dict():
     """
@@ -119,6 +119,7 @@ class Smiles:
         #Track opening and closing branches#
         branch_starts = {}
         branch_ends = {}
+        splits = []
         #Track current branch level#
         branch_level = 0
 
@@ -130,12 +131,13 @@ class Smiles:
 
         #Tracking starts of cycles#
         cycle_starts = {}
+        explicit_bond_order_cycles = {}
 
         square_brackets = False
 
         for i, component in enumerate(self.components):
 
-            #Check type of the component
+            #C heck type of the component
             if component[0] == '[':
                 component_type = 'atom'
                 square_brackets = True
@@ -154,6 +156,13 @@ class Smiles:
             except IndexError:
                 next_component_type = None
 
+            if component_type == 'split':
+                branch_starts = {}
+                branch_ends = {}
+                branch_level = 0
+                bond_order = 1
+                explicit_bond_order = 0
+                splits.append(atom_counter)
             #Dealing with bonds#
             if component_type in bonds:
                 explicit_bond_order = bonds[component_type]
@@ -198,28 +207,31 @@ class Smiles:
 
                 #Saving bond in structure.bonds and in atoms.bonds#
                 if atom_counter != 1:
-                    previous_atom = self.get_previous_atom(atom_counter, branch_starts, branch_ends, branch_level)
+                    previous_atom = self.get_previous_atom(atom_counter, branch_starts, branch_ends, branch_level, splits)
+                    if previous_atom:
+                        if explicit_bond_order:
+                            bond_order = explicit_bond_order
+                        else:
+                            if structure.get_atom(atom_counter).aromaticity \
+                                    and structure.get_atom(previous_atom).aromaticity:
+                                bond_order = 1.5
 
-                    if explicit_bond_order:
-                        bond_order = explicit_bond_order
-                    else:
-                        if structure.get_atom(atom_counter).aromaticity \
-                                and structure.get_atom(previous_atom).aromaticity:
-                            bond_order = 1.5
+                        bond_counter += 1
+                        bond = Bond(bond_counter, atom_counter, previous_atom, bond_order)
 
-                    bond_counter += 1
-                    bond = Bond(bond_counter, atom_counter, previous_atom, bond_order)
+                        structure.add_bond(bond)
 
-                    structure.add_bond(bond)
-
-                    bond_order = 1
-                    explicit_bond_order = 0
+                        bond_order = 1
+                        explicit_bond_order = 0
 
             #Dealind with cycles#
             if component_type == 'cycle_marker':
 
                 if component not in cycle_starts:
                     cycle_starts[component] = atom_counter
+                    if explicit_bond_order:
+                        explicit_bond_order_cycles[component] = explicit_bond_order
+                        explicit_bond_order = 0
                 else:
                     if explicit_bond_order != 0:
                         bond_order = explicit_bond_order
@@ -227,6 +239,8 @@ class Smiles:
                         if structure.atoms[atom_counter].aromaticity \
                                 and structure.atoms[cycle_starts[component]].aromaticity:
                             bond_order = 1.5
+                        if component in explicit_bond_order_cycles:
+                            bond_order = explicit_bond_order_cycles[component]
 
                     bond_counter += 1
                     bond = Bond(bond_counter, atom_counter, cycle_starts[component], bond_order)
@@ -257,6 +271,7 @@ class Smiles:
         """
         elements = ['B', 'C', 'N', 'O', 'S', 'P', 'F', 'Cl', 'Br', 'I', 'As', 'Si', 'Te', 'Se', 'H',
                     'b', 'c', 'n', 'o', 's', 'p', 'as', 'se', 'te', 'si']
+        not_alowed_elements = ['Bi', 'Fe', 'Ho', 'Zn', 'Cu', 'Ag', 'Au', 'Hg']
 
         chiral_mark = ''
         charge = 0
@@ -283,6 +298,8 @@ class Smiles:
         if component[0:2] in elements:
             element_symbol = component[0:2]
             component = component[2:]      # Deleting element symbol from the component#
+        elif component[0:2] in not_alowed_elements:
+            raise StructureError('invalid_element')
         elif component[0] in elements:
             element_symbol = component[0]
             component = component[1:]      # Deleting element symbol from the component#
@@ -301,6 +318,8 @@ class Smiles:
         elif hydrogens_count == 1:
             if component[component.find('H') + 1] in '123456789':
                 explicit_hydrogens = int(component[component.find('H') + 1])
+            else:
+                explicit_hydrogens = 1
         else:
             explicit_hydrogens = 0
 
@@ -327,10 +346,17 @@ class Smiles:
         return element_symbol, explicit_hydrogens, chiral_mark, charge, explicit_mass
 
     @staticmethod
-    def get_previous_atom(atom_counter, branch_starts, branch_ends, branch_level):
-        if atom_counter - 1 not in branch_ends:
+    def get_previous_atom(atom_counter, branch_starts, branch_ends, branch_level, splits):
+        if atom_counter - 1 in splits:
+            return None
+        elif atom_counter - 1 not in branch_ends:
             return atom_counter - 1
         else:
-            for i in list(branch_starts.keys())[::-1]:
-                if branch_starts[i] <= branch_level:
-                    return i
+            if branch_ends[atom_counter - 1] == branch_level:
+                for i in list(branch_starts.keys())[::-1]:
+                    if branch_starts[i] < branch_level:
+                        return i
+            else:
+                for i in list(branch_starts.keys())[::-1]:
+                    if branch_starts[i] <= branch_level:
+                        return i

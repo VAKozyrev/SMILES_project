@@ -1,7 +1,5 @@
-import numpy as np
-
-from Bond import Bond
-from Atom import Atom
+from code.Bond import Bond
+from code.Atom import Atom
 
 class Structure:
 
@@ -35,18 +33,4 @@ class Structure:
 
     def set_hydrogens(self):
         for atom_nr in self.atoms:
-            self.atoms[atom_nr].set_valency()
             self.atoms[atom_nr].set_hydrogens()
-
-    def get_connection_table(self):
-        a = [i for i in range(0, len(self.atoms) + 1, 1)]
-        matrix = np.zeros((len(self.atoms) + 1, len(self.atoms) + 1))
-        array = np.array(a)
-        matrix[0] += array
-        matrix[:, 0] += array
-        for atom in self.get_atoms():
-            for i in atom.bonds:
-                matrix[atom.number][i] = atom.bonds[i]
-
-        return matrix
-
